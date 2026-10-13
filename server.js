@@ -12,7 +12,7 @@ const server = http.createServer((req, res) => {
   }
   if (req.url === "/version") {
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ version, service }));
+    res.end(JSON.stringify({ version, service, channel: "harness" }));
     return;
   }
   res.writeHead(404, { "content-type": "application/json" });
