@@ -10,7 +10,7 @@ pipeline:
   properties:
     ci:
       codebase:
-        connectorRef: github_sample_node
+        connectorRef: github_sample_apps
         repoName: Ironmanburns/sample-node
         build: <+input>
   variables:
