@@ -12,9 +12,10 @@ This file is copied into each generated repo. The platform master copy is
 
 ## Delivery
 
-- Stable Harness deploy: **tag `v*` only** (`harness/pipeline-deploy-tag.yaml`)
+- Harness **release** on push to `main` → annotated `v*` tag (`scripts/harness-semver-release.sh`)
+- Harness **stable deploy** on tag `v*` only (`harness/pipeline-deploy-tag.yaml`)
 - PR preview + teardown pipelines for ephemeral namespaces
-- release-please on `main` creates the tag; **do not** deploy from bare `main` pushes
+- No release-please; **do not** deploy from bare `main` pushes
 - Branch protection: PR + required checks; no force-push
 
 ## Forbidden

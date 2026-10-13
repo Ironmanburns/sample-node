@@ -4,7 +4,7 @@
 
 ## Conventional Commit title
 
-PR title **must** be the release signal, e.g.:
+PR title **must** be the release signal for Harness semver on `main`, e.g.:
 
 - `feat: add readiness detail to /healthz`
 - `fix: correct version JSON field`
@@ -18,7 +18,7 @@ Breaking: `feat!: ...` or footer `BREAKING CHANGE: ...`
 - [ ] `/healthz` and `/version` still work
 - [ ] No secrets or credentials in the diff
 - [ ] Chart / Dockerfile updated if runtime changed
-- [ ] I understand stable deploy is **tag-only** (`v*`) after release-please
+- [ ] I understand: merge → Harness **release tag**; stable deploy is **tag-only** (`v*`)
 
 ## Test plan
 
