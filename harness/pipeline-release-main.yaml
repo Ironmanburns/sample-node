@@ -1,6 +1,4 @@
 # Release on push to main — creates v* tag only (no stable deploy).
-# Register trigger: GitHub push to branch main.
-# Pair with pipeline-deploy-tag.yaml (trigger: tag v*).
 pipeline:
   name: Release sample-node Main
   identifier: Release_sample_node_Main
@@ -36,29 +34,12 @@ pipeline:
             steps:
               - step:
                   type: Run
-                  name: Guard main branch
-                  identifier: Guard_main_branch
-                  spec:
-                    connectorRef: dockerhub_public
-                    image: alpine:3.20
-                    shell: Sh
-                    command: |-
-                      set -e
-                      BRANCH="<+codebase.branch>"
-                      echo "codebase.branch=${BRANCH}"
-                      if [ "$BRANCH" != "main" ]; then
-                        echo "Release pipeline only runs for main (got ${BRANCH})"
-                        exit 1
-                      fi
-              - step:
-                  type: Run
                   name: Semver tag release
                   identifier: Semver_tag_release
                   spec:
                     connectorRef: dockerhub_public
                     image: alpine:3.20
                     shell: Sh
-                    # Store a PAT or GitHub App installation token as Harness secret github_release_token
                     envVariables:
                       GITHUB_TOKEN: <+secrets.getValue("github_release_token")>
                       GITHUB_REPOSITORY: Ironmanburns/sample-node
@@ -66,7 +47,23 @@ pipeline:
                       CREATE_GITHUB_RELEASE: "true"
                     command: |-
                       set -e
-                      apk add --no-cache git bash python3 nodejs >/dev/null
+                      apk add --no-cache git bash python3 nodejs curl >/dev/null
+                      echo "codebase.branch=<+codebase.branch> trigger.branch=<+trigger.branch>"
+                      BRANCH="<+codebase.branch>"
+                      TB="<+trigger.branch>"
+                      if [ -z "$BRANCH" ] || [ "$BRANCH" = "null" ]; then BRANCH="$TB"; fi
+                      if [ "$BRANCH" != "main" ]; then
+                        echo "Release pipeline only runs for main (got branch=${BRANCH} trigger=${TB})"
+                        exit 1
+                      fi
+                      if [ -z "$GITHUB_TOKEN" ]; then
+                        echo "GITHUB_TOKEN / secret github_release_token is empty"
+                        exit 1
+                      fi
+                      echo "token_present=yes"
+                      echo "token_len=$(printf %s "$GITHUB_TOKEN" | wc -c)"
+                      git config --global --add safe.directory /harness
+                      cd /harness
                       chmod +x scripts/harness-semver-release.sh
                       bash scripts/harness-semver-release.sh
         failureStrategies:

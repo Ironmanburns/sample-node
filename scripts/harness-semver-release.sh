@@ -28,17 +28,35 @@ git config user.email "$GIT_USER_EMAIL"
 
 # Best-effort fetch (Harness workspace is already cloned; local dry-runs may have no creds).
 git fetch --tags --force origin "$RELEASE_BRANCH" 2>/dev/null || git fetch --tags --force origin 2>/dev/null || true
+
+# CI often checks out a detached commit. Prefer origin/main tip when it matches HEAD;
+# otherwise attach RELEASE_BRANCH to the current commit if it is on that branch.
+TIP_NOW="$(git rev-parse HEAD)"
 if git show-ref --verify --quiet "refs/remotes/origin/$RELEASE_BRANCH"; then
-  git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
+  ORIGIN_TIP="$(git rev-parse "origin/$RELEASE_BRANCH")"
+  if [[ "$TIP_NOW" == "$ORIGIN_TIP" ]]; then
+    git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
+  elif git merge-base --is-ancestor "$TIP_NOW" "origin/$RELEASE_BRANCH" 2>/dev/null \
+    || git branch -r --contains "$TIP_NOW" | grep -q "origin/$RELEASE_BRANCH"; then
+    git checkout -B "$RELEASE_BRANCH" "$TIP_NOW"
+  else
+    git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
+  fi
 else
   git checkout "$RELEASE_BRANCH" 2>/dev/null || git checkout -b "$RELEASE_BRANCH"
 fi
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "$BRANCH" == "HEAD" ]]; then
+  # Still detached — force a named branch at current tip for tagging/push.
+  git checkout -B "$RELEASE_BRANCH"
+  BRANCH="$RELEASE_BRANCH"
+fi
 if [[ "$BRANCH" != "$RELEASE_BRANCH" ]]; then
   echo "Refusing release on branch '$BRANCH' (want $RELEASE_BRANCH)" >&2
   exit 1
 fi
+echo "Release branch OK: $BRANCH @ $(git rev-parse --short HEAD)"
 
 TIP="$(git rev-parse HEAD)"
 if git describe --exact-match --tags "$TIP" >/dev/null 2>&1; then
