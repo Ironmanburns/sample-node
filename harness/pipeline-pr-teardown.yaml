@@ -2,7 +2,7 @@
 pipeline:
   name: PR Teardown sample-node
   identifier: PR_Teardown_sample_node
-  projectIdentifier: default_project
+  projectIdentifier: sample_apps
   orgIdentifier: default
   tags:
     app: sample-node

@@ -4,7 +4,7 @@
 pipeline:
   name: Release sample-node Main
   identifier: Release_sample_node_Main
-  projectIdentifier: default_project
+  projectIdentifier: sample_apps
   orgIdentifier: default
   tags:
     app: sample-node
