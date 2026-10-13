@@ -2,7 +2,7 @@
 pipeline:
   name: PR Preview sample-node
   identifier: PR_Preview_sample_node
-  projectIdentifier: default_project
+  projectIdentifier: sample_apps
   orgIdentifier: default
   tags:
     app: sample-node

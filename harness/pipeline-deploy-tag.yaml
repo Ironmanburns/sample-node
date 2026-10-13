@@ -4,7 +4,7 @@
 pipeline:
   name: Deploy sample-node Tag
   identifier: Deploy_sample_node_Tag
-  projectIdentifier: default_project
+  projectIdentifier: sample_apps
   orgIdentifier: default
   tags:
     app: sample-node
