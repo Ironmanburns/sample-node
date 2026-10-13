@@ -129,6 +129,11 @@ pipeline:
                   timeout: 10m
                   spec:
                     skipDryRun: false
+                    commandFlags:
+                      - commandType: Upgrade
+                        flag: "--set image.tag=<+pipeline.variables.imageTag>"
+                      - commandType: Install
+                        flag: "--set image.tag=<+pipeline.variables.imageTag>"
             rollbackSteps:
               - step:
                   name: Helm Rollback
