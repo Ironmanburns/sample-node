@@ -1,4 +1,7 @@
 # Release on push to main — creates v* tag only (no stable deploy).
+# Register trigger: GitHub push to branch main.
+# Pair with pipeline-deploy-tag.yaml (trigger: tag v*).
+# Placeholders sample-node / sample_node substituted by generate.sh.
 pipeline:
   name: Release sample-node Main
   identifier: Release_sample_node_Main
@@ -34,37 +37,43 @@ pipeline:
             steps:
               - step:
                   type: Run
+                  name: Guard main branch
+                  identifier: Guard_main_branch
+                  spec:
+                    connectorRef: dockerhub_public
+                    image: alpine:3.20
+                    shell: Sh
+                    command: |-
+                      set -e
+                      BRANCH="<+codebase.branch>"
+                      echo "codebase.branch=${BRANCH}"
+                      if [ "$BRANCH" != "main" ]; then
+                        echo "Release pipeline only runs for main (got ${BRANCH})"
+                        exit 1
+                      fi
+              - step:
+                  type: Run
                   name: Semver tag release
                   identifier: Semver_tag_release
                   spec:
                     connectorRef: dockerhub_public
                     image: alpine:3.20
                     shell: Sh
+                    # Mint a short-lived GitHub App installation token, then tag.
+                    # Live pipelines are managed by terraform/sample-apps (embeds mint script).
                     envVariables:
-                      GITHUB_TOKEN: <+secrets.getValue("github_release_token")>
+                      GITHUB_APP_ID: <+secrets.getValue("github_release_app_id")>
+                      GITHUB_APP_PRIVATE_KEY: <+secrets.getValue("github_release_app_private_key")>
+                      GITHUB_APP_OWNER: Ironmanburns
                       GITHUB_REPOSITORY: Ironmanburns/sample-node
                       RELEASE_BRANCH: main
                       CREATE_GITHUB_RELEASE: "true"
                     command: |-
                       set -e
-                      apk add --no-cache git bash python3 nodejs curl >/dev/null
-                      echo "codebase.branch=<+codebase.branch> trigger.branch=<+trigger.branch>"
-                      BRANCH="<+codebase.branch>"
-                      TB="<+trigger.branch>"
-                      if [ -z "$BRANCH" ] || [ "$BRANCH" = "null" ]; then BRANCH="$TB"; fi
-                      if [ "$BRANCH" != "main" ]; then
-                        echo "Release pipeline only runs for main (got branch=${BRANCH} trigger=${TB})"
-                        exit 1
-                      fi
-                      if [ -z "$GITHUB_TOKEN" ]; then
-                        echo "GITHUB_TOKEN / secret github_release_token is empty"
-                        exit 1
-                      fi
-                      echo "token_present=yes"
-                      echo "token_len=$(printf %s "$GITHUB_TOKEN" | wc -c)"
-                      git config --global --add safe.directory /harness
-                      cd /harness
-                      chmod +x scripts/harness-semver-release.sh
+                      apk add --no-cache git bash python3 openssl curl >/dev/null
+                      chmod +x scripts/mint-github-app-token.sh scripts/harness-semver-release.sh
+                      export GITHUB_TOKEN="$(bash scripts/mint-github-app-token.sh)"
+                      test -n "$GITHUB_TOKEN"
                       bash scripts/harness-semver-release.sh
         failureStrategies:
           - onFailure:
